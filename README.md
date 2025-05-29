@@ -69,7 +69,7 @@ Alternatively, use a bot like @userinfobot to get your chat ID.
 Send a numeric message (e.g., `70.5`) to log your weight to Garmin Connect and generate an immediate update.
 
 ## File Structure
-- `bot.py`: Main script to run the bot.
+- `weight_trend.py`: Main script to run the bot.
 - `config.json`: Configuration file for sensitive information.
 - `requirements.txt`: List of dependencies.
 - Other files for plotting and Telegram bot logic.
