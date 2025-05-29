@@ -35,8 +35,7 @@ config = load_config()
 TELEGRAM_TOKEN = config["telegram_token"]
 GARMIN_USERNAME = config["garmin_username"]
 GARMIN_PASSWORD = config["garmin_password"]
-
-AUTHORIZED_USER_ID = 129429914  # Replace with your actual Telegram user ID
+AUTHORIZED_USER_ID = config["authorized_user_id"]  # Load authorized user ID from config
 
 GOAL_FILE = "goal.txt"
 TREND_LIMITS_FILE = "trend_limits.txt"

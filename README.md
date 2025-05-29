@@ -16,6 +16,13 @@ WeightTrend Bot is a Telegram bot designed to help users track their weight tren
 - Python 3.11 or higher
 - A Garmin Connect account
 - A Telegram bot token (create one via BotFather)
+- Your Telegram chat ID
+
+## Find your Telegram chat ID:
+Open Telegram and search for the bot you created using BotFather.
+Start a conversation with your bot by sending any message (e.g., "Hello").
+Check the bot's logs or use a debugging tool to retrieve your chat ID from the update.message.chat_id field.
+Alternatively, use a bot like @userinfobot to get your chat ID.
 
 ### Steps
 1. **Clone the repository**:
@@ -39,6 +46,7 @@ WeightTrend Bot is a Telegram bot designed to help users track their weight tren
     ```json
     {
       "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+      "authorized_user_id": "YOUR_TELEGRAM_USER_ID",
       "garmin_username": "YOUR_GARMIN_USERNAME",
       "garmin_password": "YOUR_GARMIN_PASSWORD"
     }
@@ -46,7 +54,7 @@ WeightTrend Bot is a Telegram bot designed to help users track their weight tren
 
 5. **Run the bot**:
     ```bash
-    python bot.py
+    python weight_trend.py
     ```
 
 ## Usage
