@@ -18,7 +18,7 @@ WeightTrend Bot is a Telegram bot designed to help users track their weight tren
 - A Telegram bot token (create one via BotFather)
 - Your Telegram chat ID
 
-## Find your Telegram chat ID:
+### Find your Telegram chat ID:
 Open Telegram and search for the bot you created using BotFather.
 Start a conversation with your bot by sending any message (e.g., "Hello").
 Check the bot's logs or use a debugging tool to retrieve your chat ID from the update.message.chat_id field.
