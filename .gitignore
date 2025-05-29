@@ -1,0 +1,24 @@
+# Exclude sensitive configuration files
+config.json
+
+# Exclude Python cache files
+__pycache__/
+*.pyc
+
+# Exclude virtual environment folders
+venv/
+env/
+
+# Exclude log files
+*.log
+
+# Exclude temporary files
+*.tmp
+*.bak
+*.swp
+
+# Exclude matplotlib cache
+.matplotlib/
+
+# Exclude weight data files
+weight_data.json
