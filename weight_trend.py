@@ -343,7 +343,7 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Helper function to check if a trend is within limits
     def check_trend_within_limits(percentage):
         if lower_limit is not None and upper_limit is not None:
-            if lower_limit <= percentage <= upper_limit:
+            if lower_limit <= percentage <= upper_limit: 
                 return "✅"  # Green checkbox
             else:
                 return "⚠️"  # Yellow triangle with exclamation mark
@@ -488,8 +488,9 @@ async def set_trend_limits(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Parse the lower and upper limits
     try:
-        lower_limit = float(context.args[0])
-        upper_limit = float(context.args[1])
+        # Ensure that the lowest value is saved as the lower limit and the highest as the upper limit
+        lower_limit = min(float(context.args[0]), float(context.args[1]))
+        upper_limit = max(float(context.args[0]), float(context.args[1]))
         save_trend_limits(lower_limit, upper_limit)
         await update.message.reply_text(f"Trend limits set to {lower_limit:.2f}% and {upper_limit:.2f}%.")
     except (IndexError, ValueError):
