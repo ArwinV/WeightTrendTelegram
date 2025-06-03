@@ -210,13 +210,12 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     axs[0].plot(measured_data.index, measured_data['Weight'], marker='o', linestyle='-', color=colors[0], label='Measured Weight (kg)')  # MATLAB blue
     axs[0].plot(interpolated_data.index, interpolated_data['Weight'], marker='x', linestyle='None', color=colors[0], label='Interpolated Weight (kg)')  # MATLAB orange
 
-    # Get today's date
-    today = datetime.now()
+    axs[0].set_xlim(three_months_ago, now)
 
     # Calculate the dates for 7 days, 14 days, and 30 days ago
-    seven_days_ago = today - timedelta(days=7)
-    fourteen_days_ago = today - timedelta(days=14)
-    thirty_days_ago = today - timedelta(days=30)
+    seven_days_ago = now - timedelta(days=7)
+    fourteen_days_ago = now - timedelta(days=14)
+    thirty_days_ago = now - timedelta(days=30)
 
     # Add vertical dashed lines for rolling trend ranges (no legend for these lines)
     axs[0].axvline(x=seven_days_ago, color=colors[2], linestyle='--', linewidth=1, alpha=0.8)  # MATLAB green
@@ -224,7 +223,7 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     axs[0].axvline(x=thirty_days_ago, color=colors[4], linestyle='--', linewidth=1, alpha=0.8)  # MATLAB purple
 
     # Set title, labels, and grid
-    axs[0].set_title('Weight Trend (Last 3 Months)', fontsize=14)
+    axs[0].set_title('Weight (Last 3 Months)', fontsize=14)
     axs[0].set_xlabel('Date', fontsize=12)
     axs[0].set_ylabel('Weight (kg)', fontsize=12)
     axs[0].grid(True, which='both', linestyle=':', linewidth=0.5)
