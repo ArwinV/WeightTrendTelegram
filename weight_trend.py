@@ -404,9 +404,9 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     trend_clarity_message = (
         f"*🔍 Trend Clarity:*\n"
-        f"• *7-Day:* Noise = {stddev_7_3m.iloc[-1]:.2f} kg, Noise/Trend = {noise_to_trend_7:.2f}\n"
-        f"• *14-Day:* Noise = {stddev_14_3m.iloc[-1]:.2f} kg, Noise/Trend = {noise_to_trend_14:.2f}\n"
-        f"• *30-Day:* Noise = {stddev_30_3m.iloc[-1]:.2f} kg, Noise/Trend = {noise_to_trend_30:.2f}\n\n"
+        f"• *7-Day:* Noise = {stddev_7_3m.iloc[-1] if stddev_7_3m.iloc[-1] is not None else 0.0:.2f} kg, Noise/Trend = {noise_to_trend_7 if noise_to_trend_7 is not None else 'N/A'}\n"
+        f"• *14-Day:* Noise = {stddev_14_3m.iloc[-1] if stddev_14_3m.iloc[-1] is not None else 0.0:.2f} kg, Noise/Trend = {noise_to_trend_14 if noise_to_trend_14 is not None else 'N/A'}\n"
+        f"• *30-Day:* Noise = {stddev_30_3m.iloc[-1] if stddev_30_3m.iloc[-1] is not None else 0.0:.2f} kg, Noise/Trend = {noise_to_trend_30 if noise_to_trend_30 is not None else 'N/A'}\n\n"
     )
 
     # Pass messages to button_handler
