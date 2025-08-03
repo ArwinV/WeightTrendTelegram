@@ -408,7 +408,7 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Fetch weight data
-    weight_data = fetch_recent_weight_entries(use_file=True, file_path='weight_data.json')
+    weight_data = fetch_recent_weight_entries(use_file=False, file_path='weight_data.json')
     if not weight_data:
         await update.message.reply_text("No weight data available.")
         return
