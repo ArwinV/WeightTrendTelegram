@@ -144,8 +144,6 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     full_date_range = pd.date_range(start=df.index.min(), end=df.index.max())
     df = df.reindex(full_date_range)
     df.index.name = 'Date'
-
-    # Identify interpolated and measured data points
     df['IsInterpolated'] = df['Weight'].isna()  # Mark missing values before interpolation
     df['Weight'] = df['Weight'].interpolate(method='linear')  # Perform interpolation
 
@@ -164,15 +162,39 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     df['30-Day StdDev'] = df['Weight'].rolling(window=30, min_periods=1).std()
 
     # Calculate daily changes for the 7-day rolling average
-    df['7-Day Change'] = df['7-Day Avg'].diff()
+    #df['7-Day Change'] = df['7-Day Avg'].diff()
 
-    # Print daily changes to the console
-    #print("Daily Changes for 7-Day Rolling Average:")
-    #for date, change in zip(df.index, df['7-Day Change']):
-    #    print(f"{date.strftime('%Y-%m-%d')}: {change:.2f} kg/day" if not pd.isna(change) else f"{date.strftime('%Y-%m-%d')}: No change (insufficient data)")
+    # Calculate rolling trends using linear interpolation
+    def calculate_rolling_trend(df, column, window_size):
+        # Loop over dates and find linear interpolation slope and intercept
+        slopes = []
+        intercepts = []
+        pct_change = []
+        for i in range(window_size, len(df)):
+            # Select the past `window_size` days of data
+            window = df.iloc[i-window_size:i]
+            x = np.arange(len(window))  # Create a range for the x-axis (0, 1, ..., window_size-1)
+            y = window[column].values  # Get the values for the column
 
-    # Calculate rolling trends (weight change per week) using rolling averages
-    def calculate_rolling_trend(df, column):
+            # Perform linear regression to calculate slope and intercept
+            if not np.isnan(y).any():  # Ensure no NaN values in the window
+                slope, intercept = np.polyfit(x, y, 1)  # Linear fit (degree 1)
+                slopes.append(slope * 7)
+                intercepts.append(intercept)
+                pct_change.append((slope * 7) / y.mean() * 100)
+            else:
+                slopes.append(np.nan)
+                intercepts.append(np.nan)
+                pct_change.append(np.nan)
+
+        # Pad the beginning with NaN to match the length of the original data
+        slopes = [np.nan] * window_size + slopes
+        intercepts = [np.nan] * window_size + intercepts
+        pct_change = [np.nan] * window_size + pct_change
+
+        return df.index, slopes, pct_change, intercepts
+    
+    def calculate_rolling_trend_old(df, column):
         rolling_trends = df[column].diff() * 7  # Convert daily change to weekly change
         percentage_trends = (rolling_trends / df[column]) * 100  # Convert to percentage change
         return df.index, rolling_trends, percentage_trends
@@ -183,9 +205,12 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     df_last_3_months = df[df.index >= three_months_ago]
 
     # Calculate rolling trends for the last 3 months
-    trend_dates_7_3m, rolling_trends_7_3m, percentage_trends_7_3m = calculate_rolling_trend(df_last_3_months, '7-Day Avg')
-    trend_dates_14_3m, rolling_trends_14_3m, percentage_trends_14_3m = calculate_rolling_trend(df_last_3_months, '14-Day Avg')
-    trend_dates_30_3m, rolling_trends_30_3m, percentage_trends_30_3m = calculate_rolling_trend(df_last_3_months, '30-Day Avg')
+    trend_dates_7_3m, rolling_trends_7_3m, percentage_trends_7_3m, intercepts_7_3m = calculate_rolling_trend(df, 'Weight', 7)
+    trend_dates_14_3m, rolling_trends_14_3m, percentage_trends_14_3m, intercepts_14_3m = calculate_rolling_trend(df, 'Weight', 14)
+    trend_dates_30_3m, rolling_trends_30_3m, percentage_trends_30_3m, intercepts_30_3m = calculate_rolling_trend(df, 'Weight', 30)
+    trend_dates_7_3m_old, rolling_trends_7_3m_old, percentage_trends_7_3m_old = calculate_rolling_trend_old(df_last_3_months, '14-Day Avg')
+    trend_dates_14_3m_old, rolling_trends_14_3m_old, percentage_trends_14_3m_old = calculate_rolling_trend_old(df_last_3_months, '14-Day Avg')
+    trend_dates_30_3m_old, rolling_trends_30_3m_old, percentage_trends_30_3m_old = calculate_rolling_trend_old(df_last_3_months, '30-Day Avg')
 
     # Calculate rolling standard deviations and noise-to-trend ratios for the last 3 months
     stddev_7_3m = df_last_3_months['7-Day StdDev']
@@ -209,7 +234,6 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     # Plot the weight data (last 3 months)
     axs[0].plot(measured_data.index, measured_data['Weight'], marker='o', linestyle='-', color=colors[0], label='Measured Weight (kg)')  # MATLAB blue
     axs[0].plot(interpolated_data.index, interpolated_data['Weight'], marker='x', linestyle='None', color=colors[0], label='Interpolated Weight (kg)')  # MATLAB orange
-
     axs[0].set_xlim(three_months_ago, now)
 
     # Calculate the dates for 7 days, 14 days, and 30 days ago
@@ -221,6 +245,14 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     axs[0].axvline(x=seven_days_ago, color=colors[2], linestyle='--', linewidth=1, alpha=0.8)  # MATLAB green
     axs[0].axvline(x=fourteen_days_ago, color=colors[3], linestyle='--', linewidth=1, alpha=0.8)  # MATLAB red
     axs[0].axvline(x=thirty_days_ago, color=colors[4], linestyle='--', linewidth=1, alpha=0.8)  # MATLAB purple
+
+    # Add trendlines for the 7-day, 14-day, and 30-day rolling trends
+    last_seven_days = [seven_days_ago + timedelta(days=x) for x in range(0, (now-seven_days_ago).days)]
+    last_fourteen_days = [fourteen_days_ago + timedelta(days=x) for x in range(0, (now-fourteen_days_ago).days)]
+    last_thirty_days = [thirty_days_ago + timedelta(days=x) for x in range(0, (now-thirty_days_ago).days)]
+    axs[0].plot(last_seven_days, intercepts_7_3m[-1]+rolling_trends_7_3m[-1]/7*np.arange(len(last_seven_days)), linestyle='-', color=colors[2], label='7-Day Trend (kg)')  # MATLAB green
+    axs[0].plot(last_fourteen_days, intercepts_14_3m[-1]+rolling_trends_14_3m[-1]/7*np.arange(len(last_fourteen_days)), linestyle='-', color=colors[3], label='14-Day Trend (kg)')  # MATLAB red
+    axs[0].plot(last_thirty_days, intercepts_30_3m[-1]+rolling_trends_30_3m[-1]/7*np.arange(len(last_thirty_days)), linestyle='-', color=colors[4], label='30-Day Trend (kg)')  # MATLAB purple
 
     # Set title, labels, and grid
     axs[0].set_title('Weight (Last 3 Months)', fontsize=14)
@@ -234,32 +266,41 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
 
     # Plot the rolling trends (last 3 months) with a second y-axis
     ax1 = axs[1]
-    ax2 = ax1.twinx()  # Create a second y-axis
+    #ax2 = ax1.twinx()  # Create a second y-axis
 
     # Plot rolling trends in kg/week
-    line1, = ax1.plot(trend_dates_7_3m, rolling_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (kg/week)')  # MATLAB green
-    line2, = ax1.plot(trend_dates_14_3m, rolling_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (kg/week)')  # MATLAB red
-    line3, = ax1.plot(trend_dates_30_3m, rolling_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (kg/week)')  # MATLAB purple
-    ax1.set_ylabel('Weight Change (kg/week)', fontsize=12)
-    ax1.grid(True, which='both', linestyle=':', linewidth=0.5)  # Dashed grid for the first y-axis
+    #line1, = ax1.plot(trend_dates_7_3m, rolling_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (kg/week)')  # MATLAB green
+    #line2, = ax1.plot(trend_dates_14_3m, rolling_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (kg/week)')  # MATLAB red
+    #line3, = ax1.plot(trend_dates_30_3m, rolling_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (kg/week)')  # MATLAB purple
+    #ax1.set_ylabel('Weight Change (kg/week)', fontsize=12)
+    #ax1.grid(True, which='both', linestyle=':', linewidth=0.5)  # Dashed grid for the first y-axis
 
     # Plot percentage trends on the second y-axis
-    line4, = ax2.plot(trend_dates_7_3m, percentage_trends_7_3m, linestyle='--', color=colors[2], alpha=0.5)  # MATLAB green
-    line5, = ax2.plot(trend_dates_14_3m, percentage_trends_14_3m, linestyle='--', color=colors[3], alpha=0.5)  # MATLAB red
-    line6, = ax2.plot(trend_dates_30_3m, percentage_trends_30_3m, linestyle='--', color=colors[4], alpha=0.5)  # MATLAB purple
-    ax2.set_ylabel('Weight Change (%)', fontsize=12)
+    line1, = ax1.plot(trend_dates_7_3m, percentage_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (%/week)', alpha=1)  # MATLAB green
+    #line1a, = ax1.plot(trend_dates_7_3m_old, percentage_trends_7_3m_old, linestyle='-', color=colors[2], label='7-Day Rolling Avg (%/week)', alpha=1)  # MATLAB green
+    line2, = ax1.plot(trend_dates_14_3m, percentage_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (%/week)', alpha=1)  # MATLAB red
+    #line2a, = ax1.plot(trend_dates_14_3m_old, percentage_trends_14_3m_old, linestyle='-', color=colors[4], label='14-Day Rolling Avg (%/week)', alpha=1)  # MATLAB red
+    line3, = ax1.plot(trend_dates_30_3m, percentage_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (%/week)', alpha=1)  # MATLAB purple
+    #line3a, = ax1.plot(trend_dates_30_3m_old, percentage_trends_30_3m_old, linestyle='-', color=colors[6], label='30-Day Rolling Avg (%/week)', alpha=1)  # MATLAB purple
+
+    ax1.set_ylabel('Weight Change (%)', fontsize=12)
+    ax1.set_xlim(three_months_ago, now)
 
     # Add horizontal dashed lines for trend limits to the weight trend plot
     if lower_limit is not None and upper_limit is not None:
-        ax2.axhline(y=lower_limit, color='black', linestyle='--', linewidth=1, alpha=0.8)  # Black horizontal line for lower limit
-        ax2.axhline(y=upper_limit, color='black', linestyle='--', linewidth=1, alpha=0.8)  # Black horizontal line for upper limit
+        ax1.axhline(y=lower_limit, color='black', linestyle='--', linewidth=1, alpha=0.8)  # Black horizontal line for lower limit
+        ax1.axhline(y=upper_limit, color='black', linestyle='--', linewidth=1, alpha=0.8)  # Black horizontal line for upper limit
 
     # Add a dashed grid for the second y-axis with increased spacing
-    ax2.yaxis.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)  # Dashed grid for the second y-axis
-    for line in ax2.yaxis.get_gridlines():
-        line.set_dashes((5, 10))  # Custom dash pattern: 5 pixels dash, 10 pixels space
+    ax1.grid(True, which='both', linestyle=':', linewidth=0.5)  # Dashed grid for the first y-axis
+    #ax1.yaxis.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)  # Dashed grid for the second y-axis
+    #for line in ax1.yaxis.get_gridlines():
+    #    line.set_dashes((5, 10))  # Custom dash pattern: 5 pixels dash, 10 pixels space
 
     # Add legends for kg/week trends only
+    #lines_kg = [line1, line2, line3]  # Lines for kg/week trends
+    #labels_kg = [line.get_label() for line in lines_kg]  # Labels for kg/week trends
+    #ax1.legend(lines_kg, labels_kg, loc='upper left', fontsize=10)  # Only kg/week trends
     lines_kg = [line1, line2, line3]  # Lines for kg/week trends
     labels_kg = [line.get_label() for line in lines_kg]  # Labels for kg/week trends
     ax1.legend(lines_kg, labels_kg, loc='upper left', fontsize=10)  # Only kg/week trends
@@ -274,15 +315,15 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     plt.savefig(output_file, dpi=300)  # High DPI for better resolution
     plt.close()
 
-    # Calculate the most recent rolling trends
-    recent_7_day = rolling_trends_7_3m.iloc[-1] if not rolling_trends_7_3m.empty else None
-    recent_14_day = rolling_trends_14_3m.iloc[-1] if not rolling_trends_14_3m.empty else None
-    recent_30_day = rolling_trends_30_3m.iloc[-1] if not rolling_trends_30_3m.empty else None
+    # Get the most recent rolling trends
+    recent_7_day = rolling_trends_7_3m[-1]
+    recent_14_day = rolling_trends_14_3m[-1]
+    recent_30_day = rolling_trends_30_3m[-1]
 
-    # Calculate the most recent percentage trends
-    recent_7_day_percentage = percentage_trends_7_3m.iloc[-1] if not percentage_trends_7_3m.empty else None
-    recent_14_day_percentage = percentage_trends_14_3m.iloc[-1] if not percentage_trends_14_3m.empty else None
-    recent_30_day_percentage = percentage_trends_30_3m.iloc[-1] if not percentage_trends_30_3m.empty else None
+    # Get the most recent percentage trends
+    recent_7_day_percentage = percentage_trends_7_3m[-1]
+    recent_14_day_percentage = percentage_trends_14_3m[-1]
+    recent_30_day_percentage = percentage_trends_30_3m[-1]
 
     return recent_7_day, recent_14_day, recent_30_day, recent_7_day_percentage, recent_14_day_percentage, recent_30_day_percentage, stddev_7_3m, stddev_14_3m, stddev_30_3m
 
@@ -324,7 +365,7 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Fetch weight data
-    weight_data = fetch_recent_weight_entries(use_file=False, file_path='weight_data.json')
+    weight_data = fetch_recent_weight_entries(use_file=True, file_path='weight_data.json')
     if not weight_data:
         await update.message.reply_text("No weight data available.")
         return
@@ -361,7 +402,7 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
         weight_loss_to_go = None
         time_to_goal = None
 
-    # Calculate noise-to-trend ratios for the most recent trends
+    # Get noise-to-trend ratios for the most recent trends
     noise_to_trend_7 = calculate_noise_to_trend(stddev_7_3m.iloc[-1], recent_7_day) if recent_7_day is not None else None
     noise_to_trend_14 = calculate_noise_to_trend(stddev_14_3m.iloc[-1], recent_14_day) if recent_14_day is not None else None
     noise_to_trend_30 = calculate_noise_to_trend(stddev_30_3m.iloc[-1], recent_30_day) if recent_30_day is not None else None
