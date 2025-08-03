@@ -70,7 +70,16 @@ def load_trend_limits():
             return float(limits[0]), float(limits[1])
     except (FileNotFoundError, ValueError, IndexError):
         return None, None  # No limits set
-
+    
+def load_start_date():
+    """Load the start date from the file."""
+    try:
+        with open("start_date.txt", "r") as file:
+            start_date = datetime.strptime(file.read().strip(), '%Y-%m-%d')
+            return start_date
+    except (FileNotFoundError, ValueError):
+        return None  # No start date set or invalid format
+    
 def save_trend_limits(lower_limit, upper_limit):
     """Save the trend limits to the file."""
     with open(TREND_LIMITS_FILE, 'w') as file:
@@ -225,6 +234,26 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     noise_to_trend_30 = calculate_noise_to_trend(stddev_30_3m.iloc[-1], recent_30_day) if not stddev_30_3m.empty else None
     noise_to_trend_30 = calculate_noise_to_trend(stddev_30_3m.iloc[-1], recent_30_day) if not stddev_30_3m.empty else None
 
+    # Load the start date and trend limits
+    start_date = load_start_date()
+    if start_date is None:
+        start_date = datetime.now() - timedelta(days=30)  # Default to one month ago
+
+    # Get the weight at the start date
+    start_weight = df.loc[start_date, 'Weight'] if start_date in df.index else df['Weight'].iloc[0]
+
+    # Filter data to include only entries after the start date
+    df = df[df.index >= start_date]
+
+    # Calculate maximum and minimum weights based on trend limits over time
+    if lower_limit is not None and upper_limit is not None:
+        days_since_start = (df.index - start_date).days
+        max_weights = start_weight * (1 + upper_limit / 100) ** (days_since_start / 7)
+        min_weights = start_weight * (1 + lower_limit / 100) ** (days_since_start / 7)
+    else:
+        max_weights = None
+        min_weights = None
+
     # Use the default MATLAB colors (tab10 colormap)
     colors = plt.cm.tab10.colors
 
@@ -253,6 +282,20 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     axs[0].plot(last_seven_days, intercepts_7_3m[-1]+rolling_trends_7_3m[-1]/7*np.arange(len(last_seven_days)), linestyle='-', color=colors[2], label='7-Day Trend (kg)')  # MATLAB green
     axs[0].plot(last_fourteen_days, intercepts_14_3m[-1]+rolling_trends_14_3m[-1]/7*np.arange(len(last_fourteen_days)), linestyle='-', color=colors[3], label='14-Day Trend (kg)')  # MATLAB red
     axs[0].plot(last_thirty_days, intercepts_30_3m[-1]+rolling_trends_30_3m[-1]/7*np.arange(len(last_thirty_days)), linestyle='-', color=colors[4], label='30-Day Trend (kg)')  # MATLAB purple
+
+    # Add the min and max weight lines based on trend limits
+    if min_weights is not None and max_weights is not None:
+        axs[0].plot(df.index, min_weights, linestyle='--', color='black', linewidth=1, alpha=0.8, label='Lower Limit', zorder=1)
+        axs[0].plot(df.index, max_weights, linestyle='--', color='black', linewidth=1, alpha=0.8, label='Upper Limit', zorder=1)
+    
+    # Set y-axis limits based on the measured weight data
+    min_weight = measured_data['Weight'].min()
+    max_weight = measured_data['Weight'].max()
+    # Find the min and max weights within the last three months
+    min_weight_3m = df_last_3_months['Weight'].min()
+    max_weight_3m = df_last_3_months['Weight'].max()
+
+    axs[0].set_ylim(min_weight_3m - 0.1, max_weight_3m + 0.1)  # Add some padding to the limits
 
     # Set title, labels, and grid
     axs[0].set_title('Weight (Last 3 Months)', fontsize=14)
@@ -563,6 +606,28 @@ async def log_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         await update.message.reply_text("Invalid input. Please send a valid weight in kilograms (e.g., 70.5).")
 
+async def set_start_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle the /setstartdate command."""
+    user_id = update.message.from_user.id
+
+    # Check if the user is authorized
+    if user_id != AUTHORIZED_USER_ID:
+        await update.message.reply_text("Unauthorized access. You are not allowed to use this bot.")
+        return
+
+    # Parse the start date
+    try:
+        start_date = datetime.strptime(context.args[0], '%Y-%m-%d')
+        # Save the start date to a file
+        with open("start_date.txt", "w") as file:
+            file.write(start_date.strftime('%Y-%m-%d'))
+
+        # Store the start date in bot_data for immediate use
+        context.bot_data["start_date"] = start_date
+        await update.message.reply_text(f"Start date set to {start_date.strftime('%Y-%m-%d')}.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Usage: /setstartdate [YYYY-MM-DD] (e.g., /setstartdate 2023-01-01)")
+
 # Main function to start the bot
 def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -570,6 +635,7 @@ def main():
     application.add_handler(CommandHandler("setgoal", set_goal))
     application.add_handler(CommandHandler("removegoal", remove_goal))
     application.add_handler(CommandHandler("trendlimits", set_trend_limits))
+    application.add_handler(CommandHandler("setstartdate", set_start_date))
 
     # Add message handler for logging weight
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, log_weight))
