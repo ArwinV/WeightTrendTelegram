@@ -16,10 +16,11 @@ import os  # Import os for file operations
 
 tracemalloc.start()
 
-# Load configuration from config.json
+# Load configuration from config.json that is stored in same folder as script
 def load_config():
     try:
-        with open("config.json", "r") as file:
+        # Make sure it also works when script is run from another directory
+        with open(os.path.join(os.path.dirname(__file__), "config.json"), "r") as file:
             return json.load(file)
     except FileNotFoundError:
         print("Error: config.json file not found.")
@@ -43,7 +44,8 @@ TREND_LIMITS_FILE = "trend_limits.txt"
 def load_goal():
     """Load the goal weight from the goal file."""
     try:
-        with open(GOAL_FILE, 'r') as file:
+        # Make sure it also works when script is run from another directory
+        with open(os.path.join(os.path.dirname(__file__), GOAL_FILE), 'r') as file:
             goal = float(file.read().strip())
             return goal
     except (FileNotFoundError, ValueError):
@@ -51,21 +53,24 @@ def load_goal():
 
 def save_goal(goal):
     """Save the goal weight to the goal file."""
-    with open(GOAL_FILE, 'w') as file:
+    # Make sure it also works when script is run from another directory
+    with open(os.path.join(os.path.dirname(__file__), GOAL_FILE), 'w') as file:
         file.write(str(goal))
 
 # Rename the existing remove_goal function
 def delete_goal_file():
     """Remove the goal weight by deleting the goal file."""
     try:
-        os.remove(GOAL_FILE)
+        # Make sure it also works when script is run from another directory
+        os.remove(os.path.join(os.path.dirname(__file__), GOAL_FILE))
     except FileNotFoundError:
         pass
 
 def load_trend_limits():
     """Load the trend limits from the file."""
     try:
-        with open(TREND_LIMITS_FILE, 'r') as file:
+        # Make sure it also works when script is run from another directory
+        with open(os.path.join(os.path.dirname(__file__), TREND_LIMITS_FILE), 'r') as file:
             limits = file.read().strip().split()
             return float(limits[0]), float(limits[1])
     except (FileNotFoundError, ValueError, IndexError):
@@ -74,7 +79,8 @@ def load_trend_limits():
 def load_start_date():
     """Load the start date from the file."""
     try:
-        with open("start_date.txt", "r") as file:
+        # Make sure it also works when script is run from another directory
+        with open(os.path.join(os.path.dirname(__file__), "start_date.txt"), "r") as file:
             start_date = datetime.strptime(file.read().strip(), '%Y-%m-%d')
             return start_date
     except (FileNotFoundError, ValueError):
@@ -82,7 +88,8 @@ def load_start_date():
     
 def save_trend_limits(lower_limit, upper_limit):
     """Save the trend limits to the file."""
-    with open(TREND_LIMITS_FILE, 'w') as file:
+    # Make sure it also works when script is run from another directory
+    with open(os.path.join(os.path.dirname(__file__), TREND_LIMITS_FILE), 'w') as file:
         file.write(f"{lower_limit} {upper_limit}")
 
 def fetch_recent_weight_entries(use_file, file_path):
@@ -90,7 +97,8 @@ def fetch_recent_weight_entries(use_file, file_path):
     if use_file:
         # Load weight data from file
         try:
-            with open(file_path, 'r') as file:
+            # Make sure it also works when script is run from another directory
+            with open(os.path.join(os.path.dirname(__file__), file_path), 'r') as file:
                 weight_data = json.load(file)
                 return weight_data
         except FileNotFoundError:
