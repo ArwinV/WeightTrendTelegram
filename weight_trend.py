@@ -319,11 +319,14 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     #ax1.grid(True, which='both', linestyle=':', linewidth=0.5)  # Dashed grid for the first y-axis
 
     # Plot percentage trends on the second y-axis
-    line1, = ax1.plot(trend_dates_7_3m, percentage_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (%/week)', alpha=1)  # MATLAB green
+    if len(percentage_trends_7_3m) == len(trend_dates_7_3m):
+        line1, = ax1.plot(trend_dates_7_3m, percentage_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (%/week)', alpha=1)  # MATLAB green
     #line1a, = ax1.plot(trend_dates_7_3m_old, percentage_trends_7_3m_old, linestyle='-', color=colors[2], label='7-Day Rolling Avg (%/week)', alpha=1)  # MATLAB green
-    line2, = ax1.plot(trend_dates_14_3m, percentage_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (%/week)', alpha=1)  # MATLAB red
+    if len(percentage_trends_14_3m) == len(trend_dates_14_3m):
+        line2, = ax1.plot(trend_dates_14_3m, percentage_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (%/week)', alpha=1)  # MATLAB red
     #line2a, = ax1.plot(trend_dates_14_3m_old, percentage_trends_14_3m_old, linestyle='-', color=colors[4], label='14-Day Rolling Avg (%/week)', alpha=1)  # MATLAB red
-    line3, = ax1.plot(trend_dates_30_3m, percentage_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (%/week)', alpha=1)  # MATLAB purple
+    if len(percentage_trends_30_3m) == len(trend_dates_30_3m):
+        line3, = ax1.plot(trend_dates_30_3m, percentage_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (%/week)', alpha=1)  # MATLAB purple
     #line3a, = ax1.plot(trend_dates_30_3m_old, percentage_trends_30_3m_old, linestyle='-', color=colors[6], label='30-Day Rolling Avg (%/week)', alpha=1)  # MATLAB purple
 
     ax1.set_ylabel('Weight Change (%)', fontsize=12)
