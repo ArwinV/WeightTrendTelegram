@@ -319,14 +319,18 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     #ax1.grid(True, which='both', linestyle=':', linewidth=0.5)  # Dashed grid for the first y-axis
 
     # Plot percentage trends on the second y-axis
+    lines_kg = []
     if len(percentage_trends_7_3m) == len(trend_dates_7_3m):
         line1, = ax1.plot(trend_dates_7_3m, percentage_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (%/week)', alpha=1)  # MATLAB green
+        lines_kg.append(line1)
     #line1a, = ax1.plot(trend_dates_7_3m_old, percentage_trends_7_3m_old, linestyle='-', color=colors[2], label='7-Day Rolling Avg (%/week)', alpha=1)  # MATLAB green
     if len(percentage_trends_14_3m) == len(trend_dates_14_3m):
         line2, = ax1.plot(trend_dates_14_3m, percentage_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (%/week)', alpha=1)  # MATLAB red
+        lines_kg.append(line2)
     #line2a, = ax1.plot(trend_dates_14_3m_old, percentage_trends_14_3m_old, linestyle='-', color=colors[4], label='14-Day Rolling Avg (%/week)', alpha=1)  # MATLAB red
     if len(percentage_trends_30_3m) == len(trend_dates_30_3m):
         line3, = ax1.plot(trend_dates_30_3m, percentage_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (%/week)', alpha=1)  # MATLAB purple
+        lines_kg.append(line3)
     #line3a, = ax1.plot(trend_dates_30_3m_old, percentage_trends_30_3m_old, linestyle='-', color=colors[6], label='30-Day Rolling Avg (%/week)', alpha=1)  # MATLAB purple
 
     ax1.set_ylabel('Weight Change (%)', fontsize=12)
@@ -347,7 +351,6 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     #lines_kg = [line1, line2, line3]  # Lines for kg/week trends
     #labels_kg = [line.get_label() for line in lines_kg]  # Labels for kg/week trends
     #ax1.legend(lines_kg, labels_kg, loc='upper left', fontsize=10)  # Only kg/week trends
-    lines_kg = [line1, line2, line3]  # Lines for kg/week trends
     labels_kg = [line.get_label() for line in lines_kg]  # Labels for kg/week trends
     ax1.legend(lines_kg, labels_kg, loc='upper left', fontsize=10)  # Only kg/week trends
 
