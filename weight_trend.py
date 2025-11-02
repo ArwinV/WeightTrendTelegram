@@ -404,6 +404,7 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check if the user is authorized
     if user_id != AUTHORIZED_USER_ID:
+        print("Unauthorized access attempt detected by user ID:", user_id)
         await update.message.reply_text("Unauthorized access. You are not allowed to use this bot.")
         return
 
@@ -542,6 +543,7 @@ async def set_goal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check if the user is authorized
     if user_id != AUTHORIZED_USER_ID:
+        print("Unauthorized access attempt detected by user ID:", user_id)
         await update.message.reply_text("Unauthorized access. You are not allowed to use this bot.")
         return
 
@@ -566,6 +568,7 @@ async def set_trend_limits(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check if the user is authorized
     if user_id != AUTHORIZED_USER_ID:
+        print("Unauthorized access attempt detected by user ID:", user_id)
         await update.message.reply_text("Unauthorized access. You are not allowed to use this bot.")
         return
 
@@ -585,6 +588,7 @@ async def log_weight(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check if the user is authorized
     if user_id != AUTHORIZED_USER_ID:
+        print("Unauthorized access attempt detected by user ID:", user_id)
         await update.message.reply_text("Unauthorized access. You are not allowed to use this bot.")
         return
 
@@ -612,6 +616,7 @@ async def set_start_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Check if the user is authorized
     if user_id != AUTHORIZED_USER_ID:
+        print("Unauthorized access attempt detected by user ID:", user_id)
         await update.message.reply_text("Unauthorized access. You are not allowed to use this bot.")
         return
 
