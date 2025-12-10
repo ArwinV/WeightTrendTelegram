@@ -317,29 +317,18 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
 
     # Plot the rolling trends (last 3 months) with a second y-axis
     ax1 = axs[1]
-    #ax2 = ax1.twinx()  # Create a second y-axis
-
-    # Plot rolling trends in kg/week
-    #line1, = ax1.plot(trend_dates_7_3m, rolling_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (kg/week)')  # MATLAB green
-    #line2, = ax1.plot(trend_dates_14_3m, rolling_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (kg/week)')  # MATLAB red
-    #line3, = ax1.plot(trend_dates_30_3m, rolling_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (kg/week)')  # MATLAB purple
-    #ax1.set_ylabel('Weight Change (kg/week)', fontsize=12)
-    #ax1.grid(True, which='both', linestyle=':', linewidth=0.5)  # Dashed grid for the first y-axis
 
     # Plot percentage trends on the second y-axis
     lines_kg = []
     if len(percentage_trends_7_3m) == len(trend_dates_7_3m):
         line1, = ax1.plot(trend_dates_7_3m, percentage_trends_7_3m, linestyle='-', color=colors[2], label='7-Day Rolling Trend (%/week)', alpha=1)  # MATLAB green
         lines_kg.append(line1)
-    #line1a, = ax1.plot(trend_dates_7_3m_old, percentage_trends_7_3m_old, linestyle='-', color=colors[2], label='7-Day Rolling Avg (%/week)', alpha=1)  # MATLAB green
     if len(percentage_trends_14_3m) == len(trend_dates_14_3m):
         line2, = ax1.plot(trend_dates_14_3m, percentage_trends_14_3m, linestyle='-', color=colors[3], label='14-Day Rolling Trend (%/week)', alpha=1)  # MATLAB red
         lines_kg.append(line2)
-    #line2a, = ax1.plot(trend_dates_14_3m_old, percentage_trends_14_3m_old, linestyle='-', color=colors[4], label='14-Day Rolling Avg (%/week)', alpha=1)  # MATLAB red
     if len(percentage_trends_30_3m) == len(trend_dates_30_3m):
         line3, = ax1.plot(trend_dates_30_3m, percentage_trends_30_3m, linestyle='-', color=colors[4], label='30-Day Rolling Trend (%/week)', alpha=1)  # MATLAB purple
         lines_kg.append(line3)
-    #line3a, = ax1.plot(trend_dates_30_3m_old, percentage_trends_30_3m_old, linestyle='-', color=colors[6], label='30-Day Rolling Avg (%/week)', alpha=1)  # MATLAB purple
 
     ax1.set_ylabel('Weight Change (%)', fontsize=12)
     ax1.set_xlim(three_months_ago, now)
@@ -351,14 +340,8 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
 
     # Add a dashed grid for the second y-axis with increased spacing
     ax1.grid(True, which='both', linestyle=':', linewidth=0.5)  # Dashed grid for the first y-axis
-    #ax1.yaxis.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)  # Dashed grid for the second y-axis
-    #for line in ax1.yaxis.get_gridlines():
-    #    line.set_dashes((5, 10))  # Custom dash pattern: 5 pixels dash, 10 pixels space
 
     # Add legends for kg/week trends only
-    #lines_kg = [line1, line2, line3]  # Lines for kg/week trends
-    #labels_kg = [line.get_label() for line in lines_kg]  # Labels for kg/week trends
-    #ax1.legend(lines_kg, labels_kg, loc='upper left', fontsize=10)  # Only kg/week trends
     labels_kg = [line.get_label() for line in lines_kg]  # Labels for kg/week trends
     ax1.legend(lines_kg, labels_kg, loc='upper left', fontsize=10)  # Only kg/week trends
 
@@ -370,6 +353,53 @@ def process_weight_data(weight_data, output_file='weight_trend.png', lower_limit
     # Adjust layout and save the plot
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)  # High DPI for better resolution
+    plt.close()
+
+    # Calculate an estimated caloric deficit/surplus based on weight trends
+    caloric_trends = {
+        '7-Day': [trend * 7700 / 7 for trend in rolling_trends_7_3m if trend is not None],
+        '14-Day': [trend * 7700 / 7 for trend in rolling_trends_14_3m if trend is not None],
+        '30-Day': [trend * 7700 / 7 for trend in rolling_trends_30_3m if trend is not None],
+    }
+
+    # Extract only the last three months of caloric trend dates
+    trend_dates_7_3m = [date for date in trend_dates_7_3m if date >= three_months_ago]
+    trend_dates_14_3m = [date for date in trend_dates_14_3m if date >= three_months_ago]
+    trend_dates_30_3m = [date for date in trend_dates_30_3m if date >= three_months_ago]
+    # Adjust caloric trends to match the filtered dates
+    caloric_trends['7-Day'] = caloric_trends['7-Day'][-len(trend_dates_7_3m):]
+    caloric_trends['14-Day'] = caloric_trends['14-Day'][-len(trend_dates_14_3m):]
+    caloric_trends['30-Day'] = caloric_trends['30-Day'][-len(trend_dates_30_3m):]
+
+    # Create plot for caloric trends
+    fig2, ax2 = plt.subplots(figsize=(6.5, 4))
+
+    # Plot the caloric trends
+    if caloric_trends['7-Day']:
+        ax2.plot(trend_dates_7_3m, caloric_trends['7-Day'], linestyle='-', color=colors[2], label='7-Day Caloric Trend (kcal/day)', alpha=1)  # MATLAB green
+    if caloric_trends['14-Day']:
+        ax2.plot(trend_dates_14_3m, caloric_trends['14-Day'], linestyle='-', color=colors[3], label='14-Day Caloric Trend (kcal/day)', alpha=1)  # MATLAB red
+    if caloric_trends['30-Day']:
+        ax2.plot(trend_dates_30_3m, caloric_trends['30-Day'], linestyle='-', color=colors[4], label='30-Day Caloric Trend (kcal/day)', alpha=1)  # MATLAB purple
+
+    # Calculate and plot caloric trend limits
+    if lower_limit is not None and upper_limit is not None:
+        # Convert percentage limits to caloric limits using weight at each point
+        caloric_lower_limits = [start_weight * (1 + lower_limit / 100) ** ((date - start_date).days / 7) * lower_limit * 7700 / 700 for date in df.index if date >= three_months_ago]
+        caloric_upper_limits = [start_weight * (1 + upper_limit / 100) ** ((date - start_date).days / 7) * upper_limit * 7700 / 700 for date in df.index if date >= three_months_ago]
+        ax2.plot(df.index[df.index >= three_months_ago], caloric_lower_limits, linestyle='--', color='black', linewidth=1, alpha=0.8, label='Caloric Lower Limit', zorder=1)
+        ax2.plot(df.index[df.index >= three_months_ago], caloric_upper_limits, linestyle='--', color='black', linewidth=1, alpha=0.8, label='Caloric Upper Limit', zorder=1)
+    # Set plot title, labels, and grid
+    ax2.set_title('Estimated Caloric Trends (Last 3 Months)', fontsize=14)
+    ax2.set_xlabel('Date', fontsize=12)
+    ax2.set_ylabel('Caloric Change (kcal/day)', fontsize=12)
+    ax2.grid(True, which='both', linestyle=':', linewidth=0.5)
+    ax2.legend(fontsize=10)
+    ax2.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d-%b'))
+
+    # Save the caloric trends plot
+    plt.tight_layout()
+    plt.savefig('caloric_trend.png', dpi=300)
     plt.close()
 
     # Get the most recent rolling trends
@@ -492,6 +522,27 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• *30-Day:* {recent_30_day:.2f} kg/week ({recent_30_day_percentage:.2f}%) {check_trend_within_limits(recent_30_day_percentage)}\n\n"
     )
 
+    # Add caloric trends to the message
+    if lower_limit is not None and upper_limit is not None:
+        # Calculate caloric limits based on current weight
+        lower_caloric_limit = current_weight * (lower_limit / 100) * 7700 / 7  # kcal/day
+        upper_caloric_limit = current_weight * (upper_limit / 100) * 7700 / 7  # kcal/day
+        midpoint_caloric_limit = (lower_caloric_limit + upper_caloric_limit) / 2
+
+        # Calculate differences from the midpoint
+        diff_7_day = recent_7_day * 7700 / 7 - midpoint_caloric_limit
+        diff_14_day = recent_14_day * 7700 / 7 - midpoint_caloric_limit
+        diff_30_day = recent_30_day * 7700 / 7 - midpoint_caloric_limit
+
+        message += (
+            f"*🔥 Caloric Trends:*\n"
+            f"• *7-Day Trend:* {diff_7_day:+.0f} kcal/day from target midpoint\n"
+            f"• *14-Day Trend:* {diff_14_day:+.0f} kcal/day from target midpoint)\n"
+            f"• *30-Day Trend:* {diff_30_day:+.0f} kcal/day from target midpoint)\n\n"
+        )
+    else:
+        message += "*🔥 Caloric Trends:* Not available. Set trend limits using /trendlimits [lower_limit] [upper_limit].\n\n"
+
     # Create collapsible sections for trend limits and trend clarity
     trend_limits_message = (
         f"*📊 Current Trend Limits:*\n"
@@ -517,6 +568,7 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📊 Trend Limits", callback_data="trend_limits")],
         [InlineKeyboardButton("🔍 Trend Clarity", callback_data="trend_clarity")],
+        [InlineKeyboardButton("🔥 Caloric Trends", callback_data="caloric_trends")],  # New button for caloric trends
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -543,10 +595,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("⬅️ Back to Overview", callback_data="overview")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=escape_except_asterisk(trend_clarity_message), parse_mode="MarkdownV2", reply_markup=reply_markup)
+    elif query.data == "caloric_trends":  # Handle the caloric trends button
+        chat_id = query.message.chat_id
+
+        # Send an informational message about caloric trends
+        info_message = (
+            "*🔥 Caloric Trends Info:*\n"
+            "• The caloric trends are calculated relative to maintenance calories.\n"
+            "• Assumes 7700 kcal per 1 kg of body weight change.\n"
+            "• Target calories are based on the trend limits you set.\n"
+        )
+        await context.bot.send_message(chat_id=chat_id, text=escape_except_asterisk(info_message), parse_mode="MarkdownV2")
+
+        # Send the caloric trends plot
+        await context.bot.send_photo(chat_id=chat_id, photo=open('caloric_trend.png', 'rb'))
     elif query.data == "overview":
         keyboard = [
             [InlineKeyboardButton("📊 Trend Limits", callback_data="trend_limits")],
             [InlineKeyboardButton("🔍 Trend Clarity", callback_data="trend_clarity")],
+            [InlineKeyboardButton("🔥 Caloric Trends", callback_data="caloric_trends")],  # Include the new button here as well
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=escape_except_asterisk(overview_message), parse_mode="MarkdownV2", reply_markup=reply_markup)
