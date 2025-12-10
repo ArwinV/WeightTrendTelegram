@@ -537,8 +537,8 @@ async def get_update(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message += (
             f"*🔥 Caloric Trends:*\n"
             f"• *7-Day Trend:* {diff_7_day:+.0f} kcal/day from target midpoint\n"
-            f"• *14-Day Trend:* {diff_14_day:+.0f} kcal/day from target midpoint)\n"
-            f"• *30-Day Trend:* {diff_30_day:+.0f} kcal/day from target midpoint)\n\n"
+            f"• *14-Day Trend:* {diff_14_day:+.0f} kcal/day from target midpoint\n"
+            f"• *30-Day Trend:* {diff_30_day:+.0f} kcal/day from target midpoint\n\n"
         )
     else:
         message += "*🔥 Caloric Trends:* Not available. Set trend limits using /trendlimits [lower_limit] [upper_limit].\n\n"
